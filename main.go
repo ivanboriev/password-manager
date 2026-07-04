@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -166,6 +167,55 @@ func (pm *PasswordManager) SaveToFile() error {
 	_, err = file.Write(encryptedData)
 	if err != nil {
 		return fmt.Errorf("failed to write encrypted data to file: %v", err)
+	}
+
+	return nil
+}
+
+func (pm *PasswordManager) LoadFromFile() error {
+	if !pm.isInitialized {
+		return fmt.Errorf("password manager is not initialized")
+	}
+
+	file, err := os.Open(pm.filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	chiper, err := aes.NewCipher(pm.masterKey)
+	if err != nil {
+		return fmt.Errorf("failed to create cipher: %v", err)
+	}
+
+	gcm, err := cipher.NewGCM(chiper)
+	if err != nil {
+		return fmt.Errorf("failed to create GCM: %v", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+
+	n, err := io.ReadFull(strings.NewReader(pm.filePath), nonce)
+	if err != nil {
+		return fmt.Errorf("failed to read nonce from file: %v", err)
+	}
+	if n != len(nonce) {
+		return fmt.Errorf("failed to read complete nonce from file")
+	}
+
+	data, err := io.ReadAll(strings.NewReader(pm.filePath))
+	if err != nil {
+		return fmt.Errorf("failed to read data from file: %v", err)
+	}
+
+	decryptedData, err := gcm.Open(nil, nonce, data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt data: %v", err)
+	}
+
+	err = json.Unmarshal(decryptedData, &pm.passwords)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal passwords: %v", err)
 	}
 
 	return nil
