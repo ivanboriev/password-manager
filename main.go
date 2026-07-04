@@ -1,7 +1,10 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -118,6 +121,53 @@ func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	}
 
 	return string(password), nil
+}
+
+func (pm *PasswordManager) SaveToFile() error {
+	if !pm.isInitialized {
+		return fmt.Errorf("password manager is not initialized")
+	}
+
+	data, err := json.Marshal(pm.passwords)
+	if err != nil {
+		return fmt.Errorf("failed to marshal passwords: %v", err)
+	}
+
+	chiper, err := aes.NewCipher(pm.masterKey)
+	if err != nil {
+		return fmt.Errorf("failed to create cipher: %v", err)
+	}
+
+	gcm, err := cipher.NewGCM(chiper)
+	if err != nil {
+		return fmt.Errorf("failed to create GCM: %v", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		return fmt.Errorf("failed to generate nonce: %v", err)
+	}
+
+	encryptedData := gcm.Seal(nil, nonce, data, nil)
+
+	file, err := os.Create(pm.filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(nonce)
+	if err != nil {
+		return fmt.Errorf("failed to write nonce to file: %v", err)
+	}
+
+	_, err = file.Write(encryptedData)
+	if err != nil {
+		return fmt.Errorf("failed to write encrypted data to file: %v", err)
+	}
+
+	return nil
 }
 
 func main() {
