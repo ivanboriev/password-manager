@@ -14,10 +14,10 @@ type Password struct {
 }
 
 type PasswordManager struct {
-	passwords     map[string]Password
-	masterKey     []byte `json:"-"`
-	filePath      string `json:"-"`
-	isInitialized bool   `json:"-"`
+	passwords     map[string]Password `json:"passwords"`
+	masterKey     []byte              `json:"-"`
+	filePath      string              `json:"-"`
+	isInitialized bool                `json:"-"`
 }
 
 func NewPassword(name, value, category string) Password {
