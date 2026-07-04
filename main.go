@@ -1,0 +1,3 @@
+package passwordmanager
+
+func main() {}
