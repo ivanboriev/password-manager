@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -39,9 +40,38 @@ func NewPasswordManager(filePath string) *PasswordManager {
 	}
 }
 
+func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
+
+	if len(masterPassword) < 8 {
+		return fmt.Errorf("master password must be at least 8 characters long")
+	}
+
+	buffer := make([]byte, 32)
+
+	copy(buffer, []byte(masterPassword))
+
+	pm.masterKey = buffer
+
+	pm.isInitialized = true
+
+	return nil
+}
+
 func main() {
 
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run main.go <master_password>")
+		os.Exit(1)
+	}
+
 	pm := NewPasswordManager("passwords.dat")
+
+	err := pm.SetMasterPassword(os.Args[1])
+
+	if err != nil {
+		fmt.Printf("Error setting master password: %v\n", err)
+		os.Exit(1)
+	}
 
 	fmt.Printf("Initialized: %t\n", pm.isInitialized)
 	fmt.Printf("File path: %s\n", pm.filePath)
