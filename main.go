@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -195,7 +194,7 @@ func (pm *PasswordManager) LoadFromFile() error {
 
 	nonce := make([]byte, gcm.NonceSize())
 
-	n, err := io.ReadFull(strings.NewReader(pm.filePath), nonce)
+	n, err := io.ReadFull(file, nonce)
 	if err != nil {
 		return fmt.Errorf("failed to read nonce from file: %v", err)
 	}
@@ -203,7 +202,7 @@ func (pm *PasswordManager) LoadFromFile() error {
 		return fmt.Errorf("failed to read complete nonce from file")
 	}
 
-	data, err := io.ReadAll(strings.NewReader(pm.filePath))
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("failed to read data from file: %v", err)
 	}
