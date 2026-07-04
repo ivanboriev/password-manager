@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Password struct {
 	Name         string    `json:"name"`
@@ -11,10 +14,10 @@ type Password struct {
 }
 
 type PasswordManager struct {
-	passwords     map[string]Password `json:"passwords"`
-	masterKey     []byte              `json:"-"`
-	filePath      string              `json:"-"`
-	isInitialized bool                `json:"-"`
+	passwords     map[string]Password
+	masterKey     []byte `json:"-"`
+	filePath      string `json:"-"`
+	isInitialized bool   `json:"-"`
 }
 
 func NewPassword(name, value, category string) Password {
@@ -36,4 +39,11 @@ func NewPasswordManager(filePath string) *PasswordManager {
 	}
 }
 
-func main() {}
+func main() {
+
+	pm := NewPasswordManager("passwords.dat")
+
+	fmt.Printf("Initialized: %t\n", pm.isInitialized)
+	fmt.Printf("File path: %s\n", pm.filePath)
+	fmt.Printf("Passwords count: %d\n", len(pm.passwords))
+}
