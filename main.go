@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"time"
 )
@@ -144,7 +145,7 @@ func (pm *PasswordManager) SaveToFile() error {
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
-	_, err = rand.Read(nonce)
+	_, err = io.ReadFull(rand.Reader, nonce)
 	if err != nil {
 		return fmt.Errorf("failed to generate nonce: %v", err)
 	}
