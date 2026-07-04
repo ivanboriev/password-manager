@@ -1,3 +1,3 @@
-package passwordmanager
+package main
 
 func main() {}
