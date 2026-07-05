@@ -303,6 +303,19 @@ func (pm *PasswordManager) UpdatePassword(name string, newPassword string) error
 	return nil
 }
 
+func (pm *PasswordManager) DeletePassword(name string) error {
+	if !pm.isInitialized {
+		return fmt.Errorf("password manager is not initialized")
+	}
+
+	if _, exists := pm.passwords[name]; !exists {
+		return fmt.Errorf("password with name '%s' does not exist", name)
+	}
+
+	delete(pm.passwords, name)
+	return nil
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
