@@ -396,12 +396,13 @@ func waitForEnter() {
 
 func ReadUserInput(prompt string) string {
 	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(prompt)
 	input, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Printf("Error reading user input: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Print(prompt)
+
 	return strings.TrimSpace(input)
 }
 
