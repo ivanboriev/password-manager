@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -11,6 +12,13 @@ import (
 	"slices"
 	"strings"
 	"time"
+)
+
+const (
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorReset  = "\033[0m"
 )
 
 type Password struct {
@@ -364,6 +372,24 @@ func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
 		stats["newest"] = nil
 	}
 	return stats
+}
+
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
+}
+func showSuccess(message string) {
+	fmt.Printf("%s%s%s\n", colorGreen, message, colorReset)
+}
+func showError(message string) {
+	fmt.Printf("%s%s%s\n", colorRed, message, colorReset)
+}
+func showInfo(message string) {
+	fmt.Printf("%s%s%s\n", colorYellow, message, colorReset)
+}
+func waitForEnter() {
+	fmt.Println("Press Enter to continue...")
+	stdin := bufio.NewReader(os.Stdin)
+	stdin.ReadString('\n')
 }
 
 func main() {
