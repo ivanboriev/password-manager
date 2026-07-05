@@ -294,7 +294,7 @@ func (pm *PasswordManager) UpdatePassword(name string, newPassword string) error
 
 	err := pm.CheckPasswordStrength(newPassword)
 	if err != nil {
-		return fmt.Errorf("new password does not meet strength requirements")
+		return err
 	}
 
 	password.Value = newPassword
