@@ -325,6 +325,9 @@ func (pm *PasswordManager) ListCategories() []string {
 	for cat := range categories {
 		result = append(result, cat)
 	}
+
+	slices.Sort(result)
+
 	return result
 }
 
