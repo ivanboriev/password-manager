@@ -270,10 +270,16 @@ func (pm *PasswordManager) FindDuplicatePasswords() map[string][]string {
 				searchMap[pwd.Value] = append(searchMap[pwd.Value], pwd.Name)
 			}
 		}
-
 	}
 
-	return searchMap
+	finalMap := make(map[string][]string)
+	for value, names := range searchMap {
+		if len(names) > 1 {
+			finalMap[value] = names
+		}
+	}
+
+	return finalMap
 }
 
 func main() {
