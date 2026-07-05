@@ -12,6 +12,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"golang.org/x/term"
 )
 
 const (
@@ -390,6 +392,22 @@ func waitForEnter() {
 	fmt.Println("Press Enter to continue...")
 	stdin := bufio.NewReader(os.Stdin)
 	stdin.ReadString('\n')
+}
+
+func ReadUserInput(prompt string) string {
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	return strings.TrimSpace(input)
+}
+
+func readPassword() (string, error) {
+	fmt.Print("Enter password: ")
+	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return "", err
+	}
+	fmt.Println()
+	return string(bytePassword), nil
 }
 
 func main() {
