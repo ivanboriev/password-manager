@@ -282,6 +282,27 @@ func (pm *PasswordManager) FindDuplicatePasswords() map[string][]string {
 	return finalMap
 }
 
+func (pm *PasswordManager) UpdatePassword(name string, newPassword string) error {
+	if !pm.isInitialized {
+		return fmt.Errorf("password manager is not initialized")
+	}
+
+	password, exists := pm.passwords[name]
+	if !exists {
+		return fmt.Errorf("password with name '%s' does not exist", name)
+	}
+
+	err := pm.CheckPasswordStrength(newPassword)
+	if err != nil {
+		return fmt.Errorf("new password does not meet strength requirements")
+	}
+
+	password.Value = newPassword
+	password.LastModified = time.Now()
+	pm.passwords[name] = password
+	return nil
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
