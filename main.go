@@ -343,7 +343,7 @@ func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
 
 	passwordTimes := make([]time.Time, 0, len(pm.passwords))
 	for _, pwd := range pm.passwords {
-		passwordTimes = append(passwordTimes, pwd.LastModified)
+		passwordTimes = append(passwordTimes, pwd.CreatedAt)
 	}
 
 	slices.SortFunc(passwordTimes, func(a, b time.Time) int {
