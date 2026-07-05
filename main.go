@@ -331,6 +331,41 @@ func (pm *PasswordManager) ListCategories() []string {
 	return result
 }
 
+func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
+	stats := make(map[string]interface{})
+
+	stats["total"] = len(pm.passwords)
+	categories := make(map[string]int)
+	for _, cat := range pm.ListCategories() {
+		categories[cat] = len(pm.GetPasswordsByCategory(cat))
+	}
+	stats["categories"] = categories
+
+	passwordTimes := make([]time.Time, 0, len(pm.passwords))
+	for _, pwd := range pm.passwords {
+		passwordTimes = append(passwordTimes, pwd.LastModified)
+	}
+
+	slices.SortFunc(passwordTimes, func(a, b time.Time) int {
+		if a.Before(b) {
+			return -1
+		}
+		if b.Before(a) {
+			return 1
+		}
+		return 0
+	})
+
+	if len(passwordTimes) > 0 {
+		stats["oldest"] = passwordTimes[0]
+		stats["newest"] = passwordTimes[len(passwordTimes)-1]
+	} else {
+		stats["oldest"] = nil
+		stats["newest"] = nil
+	}
+	return stats
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
@@ -350,4 +385,6 @@ func main() {
 	fmt.Printf("Initialized: %t\n", pm.isInitialized)
 	fmt.Printf("File path: %s\n", pm.filePath)
 	fmt.Printf("Passwords count: %d\n", len(pm.passwords))
+	fmt.Printf("Categories: %v\n", pm.ListCategories())
+	fmt.Printf("Password stats: %v\n", pm.GetPasswordStats())
 }
