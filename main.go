@@ -249,6 +249,16 @@ func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 	return nil
 }
 
+func (pm *PasswordManager) GetPasswordsByCategory(category string) []Password {
+	var result []Password
+	for _, pwd := range pm.passwords {
+		if pwd.Category == category {
+			result = append(result, pwd)
+		}
+	}
+	return result
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
