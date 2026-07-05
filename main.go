@@ -316,6 +316,18 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 	return nil
 }
 
+func (pm *PasswordManager) ListCategories() []string {
+	categories := make(map[string]bool)
+	for _, pwd := range pm.passwords {
+		categories[pwd.Category] = true
+	}
+	result := make([]string, 0, len(categories))
+	for cat := range categories {
+		result = append(result, cat)
+	}
+	return result
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
