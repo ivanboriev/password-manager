@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"time"
 )
@@ -257,6 +258,22 @@ func (pm *PasswordManager) GetPasswordsByCategory(category string) []Password {
 		}
 	}
 	return result
+}
+func (pm *PasswordManager) FindDuplicatePasswords() map[string][]string {
+	searchMap := make(map[string][]string)
+
+	for _, pwd := range pm.passwords {
+		if _, exists := searchMap[pwd.Value]; !exists {
+			searchMap[pwd.Value] = append(searchMap[pwd.Value], pwd.Name)
+		} else {
+			if !slices.Contains(searchMap[pwd.Value], pwd.Name) {
+				searchMap[pwd.Value] = append(searchMap[pwd.Value], pwd.Name)
+			}
+		}
+
+	}
+
+	return searchMap
 }
 
 func main() {
