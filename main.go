@@ -460,12 +460,14 @@ func HandlePasswordGeneration(pm *PasswordManager) error {
 	_, err := fmt.Sscanf(lengthInput, "%d", &length)
 	if err != nil || length < 8 {
 		showError("invalid length input")
+		waitForEnter()
 		return err
 	}
 
 	password, err := pm.GeneratePassword(length)
 	if err != nil {
 		showError("Generation failed: " + err.Error())
+		waitForEnter()
 		return err
 	}
 
@@ -487,6 +489,7 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 		password, err := pm.GeneratePassword(8)
 		if err != nil {
 			showError("failed to generate password: " + err.Error())
+			waitForEnter()
 			return err
 		}
 
@@ -496,6 +499,7 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 		err := pm.CheckPasswordStrength(value)
 		if err != nil {
 			showError("failed to check password strength: " + err.Error())
+			waitForEnter()
 			return err
 		}
 	}
@@ -503,6 +507,7 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 	err := pm.SavePassword(name, value, category)
 	if err != nil {
 		showError("failed to save password: " + err.Error())
+		waitForEnter()
 		return err
 	}
 
@@ -519,7 +524,8 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 	password, err := pm.GetPassword(name)
 	if err != nil {
 		showError(fmt.Sprintf("Password not found: %v", err))
-		return fmt.Errorf("failed to search password: %v", err)
+		waitForEnter()
+		return err
 	}
 	ShowPasswordDetails(password)
 	waitForEnter()
@@ -533,12 +539,14 @@ func HandlePasswordUpdate(pm *PasswordManager) error {
 	newPassword, err := readPassword()
 	if err != nil {
 		showError("failed to read new password: " + err.Error())
+		waitForEnter()
 		return err
 	}
 
 	err = pm.UpdatePassword(name, newPassword)
 	if err != nil {
 		showError("failed to update password: " + err.Error())
+		waitForEnter()
 		return err
 	}
 
