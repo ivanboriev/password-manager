@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -590,7 +591,7 @@ func main() {
 
 	err = pm.LoadFromFile()
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			showInfo("No existing password data found. Starting fresh.")
 		} else {
 			fmt.Printf("Error loading password data: %v\n", err)
