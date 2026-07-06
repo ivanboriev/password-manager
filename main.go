@@ -452,6 +452,82 @@ func ShowPasswordDetails(password Password) {
 	fmt.Printf("Last Modified: %s\n", password.LastModified.Format("2006-01-02 15:04:05"))
 }
 
+func HandlePasswordGeneration(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Password Generation ===")
+	lengthInput := ReadUserInput("Enter password length (min 8): ")
+	var length int
+	_, err := fmt.Sscanf(lengthInput, "%d", &length)
+	if err != nil || length < 8 {
+		return fmt.Errorf("invalid length input")
+	}
+
+	password, err := pm.GeneratePassword(length)
+	if err != nil {
+		return err
+	}
+
+	showSuccess("Password generated successfully!")
+	fmt.Printf("Generated password: %s\n", password)
+
+	return nil
+}
+
+func HandlePasswordAdd(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Add New Password ===")
+	name := ReadUserInput("Enter service name: ")
+	value, err := readPassword()
+	if err != nil {
+		return fmt.Errorf("failed to read password: %v", err)
+	}
+	category := ReadUserInput("Enter category: ")
+
+	err = pm.CheckPasswordStrength(value)
+	if err != nil {
+		return fmt.Errorf("password strength check failed: %v", err)
+	}
+
+	err = pm.SavePassword(name, value, category)
+	if err != nil {
+		return fmt.Errorf("failed to save password: %v", err)
+	}
+
+	showSuccess("Password added successfully!")
+	return nil
+}
+
+func HandlePasswordSearch(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Search Password ===")
+	name := ReadUserInput("Enter service name to search: ")
+
+	password, err := pm.GetPassword(name)
+	if err != nil {
+		return fmt.Errorf("failed to search password: %v", err)
+	}
+	ShowPasswordDetails(password)
+	return nil
+}
+
+func HandlePasswordUpdate(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Update Password ===")
+	name := ReadUserInput("Enter service name to update: ")
+	newPassword, err := readPassword()
+	if err != nil {
+		return fmt.Errorf("failed to read new password: %v", err)
+	}
+
+	err = pm.UpdatePassword(name, newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %v", err)
+	}
+
+	showSuccess("Password updated successfully!")
+	return nil
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
