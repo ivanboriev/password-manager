@@ -527,7 +527,9 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 		waitForEnter()
 		return err
 	}
+	showSuccess("Password found successfully!")
 	ShowPasswordDetails(password)
+
 	waitForEnter()
 	return nil
 }
