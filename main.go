@@ -563,9 +563,7 @@ func HandleExitAndSave(pm *PasswordManager) error {
 	fmt.Println("Saving changes...")
 	err := pm.SaveToFile()
 	if err != nil {
-		showError("failed to save passwords: " + err.Error())
-		waitForEnter()
-		return err
+		return fmt.Errorf("error saving data: %v", err)
 	}
 	showSuccess("Passwords saved successfully!")
 	showSuccess("Goodbye!")
