@@ -535,6 +535,19 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 	return nil
 }
 
+func HandlePasswordList(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== List All Passwords ===")
+	passwords := pm.ListPasswords()
+	if len(passwords) == 0 {
+		showInfo("No passwords found.")
+	} else {
+		PrintPasswordList(passwords)
+	}
+	waitForEnter()
+	return nil
+}
+
 func HandlePasswordUpdate(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Update Password ===")
@@ -568,6 +581,70 @@ func HandleExitAndSave(pm *PasswordManager) error {
 	}
 	showSuccess("Passwords saved successfully!")
 	showSuccess("Goodbye!")
+	return nil
+}
+
+func HandleDeletePassword(pm *PasswordManager) error {
+	clearScreen()
+	name := ReadUserInput("Enter service name to delete: ")
+	err := pm.DeletePassword(name)
+	if err != nil {
+		showError("failed to delete password: " + err.Error())
+		waitForEnter()
+	}
+	showSuccess("Password deleted successfully!")
+	waitForEnter()
+	return nil
+}
+
+func HandleListCategories(pm *PasswordManager) error {
+	clearScreen()
+	categories := pm.ListCategories()
+	fmt.Println("=== Categories ===")
+	for _, cat := range categories {
+		fmt.Println(cat)
+	}
+	waitForEnter()
+	return nil
+}
+
+func HandleShowPasswordStatistics(pm *PasswordManager) error {
+	clearScreen()
+	stats := pm.GetPasswordStats()
+	fmt.Println("=== Password Statistics ===")
+	fmt.Printf("Total passwords: %d\n", stats["total"])
+	fmt.Println("Passwords by category:")
+	for cat, count := range stats["categories"].(map[string]int) {
+		fmt.Printf("  %s: %d\n", cat, count)
+	}
+	if stats["oldest"] != nil {
+		fmt.Printf("Oldest password created at: %s\n", stats["oldest"].(time.Time).Format("2006-01-02 15:04:05"))
+	} else {
+		fmt.Println("No passwords available.")
+	}
+	if stats["newest"] != nil {
+		fmt.Printf("Newest password created at: %s\n", stats["newest"].(time.Time).Format("2006-01-02 15:04:05"))
+	} else {
+		fmt.Println("No passwords available.")
+	}
+	waitForEnter()
+	return nil
+}
+
+func HandleShowDuplicates(pm *PasswordManager) error {
+	clearScreen()
+	duplicates := pm.FindDuplicatePasswords()
+	if len(duplicates) == 0 {
+		showInfo("No duplicate passwords found.")
+	} else {
+		fmt.Println("=== Duplicate Passwords ===")
+		for value, names := range duplicates {
+			fmt.Printf("Password: %s\n", value)
+			fmt.Printf("Used by services: %s\n", strings.Join(names, ", "))
+			fmt.Println("---------------------------")
+		}
+	}
+	waitForEnter()
 	return nil
 }
 
@@ -606,7 +683,7 @@ func main() {
 	for {
 		ShowMainMenu()
 
-		key := ReadUserInput("Select an option: ")
+		key := ReadUserInput("Enter your choice: ")
 
 		switch key {
 		case "1":
@@ -616,65 +693,17 @@ func main() {
 		case "3":
 			HandlePasswordSearch(pm)
 		case "4":
-			clearScreen()
-			passwords := pm.ListPasswords()
-			PrintPasswordList(passwords)
-			waitForEnter()
+			HandlePasswordList(pm)
 		case "5":
 			HandlePasswordUpdate(pm)
 		case "6":
-			clearScreen()
-			name := ReadUserInput("Enter service name to delete: ")
-			err := pm.DeletePassword(name)
-			if err != nil {
-				showError("failed to delete password: " + err.Error())
-				waitForEnter()
-				continue
-			}
-			showSuccess("Password deleted successfully!")
-			waitForEnter()
+			HandleDeletePassword(pm)
 		case "7":
-			clearScreen()
-			categories := pm.ListCategories()
-			fmt.Println("=== Categories ===")
-			for _, cat := range categories {
-				fmt.Println(cat)
-			}
-			waitForEnter()
+			HandleListCategories(pm)
 		case "8":
-			clearScreen()
-			stats := pm.GetPasswordStats()
-			fmt.Println("=== Password Statistics ===")
-			fmt.Printf("Total passwords: %d\n", stats["total"])
-			fmt.Println("Passwords by category:")
-			for cat, count := range stats["categories"].(map[string]int) {
-				fmt.Printf("  %s: %d\n", cat, count)
-			}
-			if stats["oldest"] != nil {
-				fmt.Printf("Oldest password created at: %s\n", stats["oldest"].(time.Time).Format("2006-01-02 15:04:05"))
-			} else {
-				fmt.Println("No passwords available.")
-			}
-			if stats["newest"] != nil {
-				fmt.Printf("Newest password created at: %s\n", stats["newest"].(time.Time).Format("2006-01-02 15:04:05"))
-			} else {
-				fmt.Println("No passwords available.")
-			}
-			waitForEnter()
+			HandleShowPasswordStatistics(pm)
 		case "9":
-			clearScreen()
-			duplicates := pm.FindDuplicatePasswords()
-			if len(duplicates) == 0 {
-				showInfo("No duplicate passwords found.")
-			} else {
-				fmt.Println("=== Duplicate Passwords ===")
-				for value, names := range duplicates {
-					fmt.Printf("Password: %s\n", value)
-					fmt.Printf("Used by services: %s\n", strings.Join(names, ", "))
-					fmt.Println("---------------------------")
-				}
-			}
-			waitForEnter()
+			HandleShowDuplicates(pm)
 		case "0":
 			err := HandleExitAndSave(pm)
 			if err != nil {
