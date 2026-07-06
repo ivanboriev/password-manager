@@ -24,6 +24,7 @@ const (
 	colorReset  = "\033[0m"
 )
 
+// Password represents a single credential entry with metadata.
 type Password struct {
 	Name         string    `json:"name"`
 	Value        string    `json:"value"`
@@ -32,13 +33,15 @@ type Password struct {
 	LastModified time.Time `json:"lastModified"`
 }
 
+// PasswordManager manages a collection of encrypted passwords and handles persistence.
 type PasswordManager struct {
-	passwords     map[string]Password `json:"passwords"`
-	masterKey     []byte              `json:"-"`
-	filePath      string              `json:"-"`
-	isInitialized bool                `json:"-"`
+	passwords     map[string]Password
+	masterKey     []byte `json:"-"`
+	filePath      string `json:"-"`
+	isInitialized bool   `json:"-"`
 }
 
+// NewPassword creates a new Password with the current timestamps.
 func NewPassword(name, value, category string) Password {
 	return Password{
 		Name:         name,
@@ -49,6 +52,7 @@ func NewPassword(name, value, category string) Password {
 	}
 }
 
+// NewPasswordManager creates a new PasswordManager backed by the given file path.
 func NewPasswordManager(filePath string) *PasswordManager {
 	return &PasswordManager{
 		passwords:     make(map[string]Password),
@@ -58,6 +62,7 @@ func NewPasswordManager(filePath string) *PasswordManager {
 	}
 }
 
+// SetMasterPassword sets the master password (minimum 8 characters) and derives the 32-byte AES key.
 func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
 
 	if len(masterPassword) < 8 {
@@ -75,6 +80,7 @@ func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
 	return nil
 }
 
+// SavePassword adds a new password entry. Returns an error if the name already exists.
 func (pm *PasswordManager) SavePassword(name, value, category string) error {
 	if !pm.isInitialized {
 		return fmt.Errorf("password manager is not initialized")
@@ -90,6 +96,7 @@ func (pm *PasswordManager) SavePassword(name, value, category string) error {
 	return nil
 }
 
+// GetPassword retrieves a password entry by service name.
 func (pm *PasswordManager) GetPassword(name string) (Password, error) {
 	if !pm.isInitialized {
 		return Password{}, fmt.Errorf("password manager is not initialized")
@@ -102,6 +109,7 @@ func (pm *PasswordManager) GetPassword(name string) (Password, error) {
 
 	return password, nil
 }
+// ListPasswords returns all stored passwords as a slice.
 func (pm *PasswordManager) ListPasswords() []Password {
 
 	passwords := make([]Password, 0, len(pm.passwords))
@@ -114,6 +122,7 @@ func (pm *PasswordManager) ListPasswords() []Password {
 
 }
 
+// GeneratePassword creates a cryptographically random password of the given length (minimum 8).
 func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	if length < 8 {
 		return "", fmt.Errorf("password length must be at least 8 characters")
@@ -137,6 +146,7 @@ func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	return string(password), nil
 }
 
+// SaveToFile encrypts the vault with AES-256-GCM and writes it to disk.
 func (pm *PasswordManager) SaveToFile() error {
 	if !pm.isInitialized {
 		return fmt.Errorf("password manager is not initialized")
@@ -184,6 +194,7 @@ func (pm *PasswordManager) SaveToFile() error {
 	return nil
 }
 
+// LoadFromFile reads and decrypts the vault from disk using AES-256-GCM.
 func (pm *PasswordManager) LoadFromFile() error {
 	if !pm.isInitialized {
 		return fmt.Errorf("password manager is not initialized")
@@ -233,6 +244,7 @@ func (pm *PasswordManager) LoadFromFile() error {
 	return nil
 }
 
+// CheckPasswordStrength validates that a password has upper, lower, digit, and special characters.
 func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 
 	if len(password) < 8 {
@@ -261,6 +273,7 @@ func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 	return nil
 }
 
+// GetPasswordsByCategory returns all passwords that belong to the given category.
 func (pm *PasswordManager) GetPasswordsByCategory(category string) []Password {
 	var result []Password
 	for _, pwd := range pm.passwords {
@@ -270,6 +283,7 @@ func (pm *PasswordManager) GetPasswordsByCategory(category string) []Password {
 	}
 	return result
 }
+// FindDuplicatePasswords returns a map of duplicate password values to the list of service names that use them.
 func (pm *PasswordManager) FindDuplicatePasswords() map[string][]string {
 	searchMap := make(map[string][]string)
 
@@ -293,6 +307,7 @@ func (pm *PasswordManager) FindDuplicatePasswords() map[string][]string {
 	return finalMap
 }
 
+// UpdatePassword replaces the password for an existing service after validating its strength.
 func (pm *PasswordManager) UpdatePassword(name string, newPassword string) error {
 	if !pm.isInitialized {
 		return fmt.Errorf("password manager is not initialized")
@@ -314,6 +329,7 @@ func (pm *PasswordManager) UpdatePassword(name string, newPassword string) error
 	return nil
 }
 
+// DeletePassword removes a password entry by service name.
 func (pm *PasswordManager) DeletePassword(name string) error {
 	if !pm.isInitialized {
 		return fmt.Errorf("password manager is not initialized")
@@ -327,6 +343,7 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 	return nil
 }
 
+// ListCategories returns a sorted list of all unique categories used by stored passwords.
 func (pm *PasswordManager) ListCategories() []string {
 	categories := make(map[string]bool)
 	for _, pwd := range pm.passwords {
@@ -342,6 +359,7 @@ func (pm *PasswordManager) ListCategories() []string {
 	return result
 }
 
+// GetPasswordStats returns a map with total count, per-category breakdown, and oldest/newest timestamps.
 func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
 	stats := make(map[string]interface{})
 
@@ -395,6 +413,7 @@ func waitForEnter() {
 	stdin.ReadString('\n')
 }
 
+// ReadUserInput prints a prompt and reads a line of input from stdin, trimming whitespace.
 func ReadUserInput(prompt string) string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(prompt)
@@ -416,6 +435,7 @@ func readPassword() (string, error) {
 	fmt.Println()
 	return string(bytePassword), nil
 }
+// ShowMainMenu clears the screen and prints the interactive menu options.
 func ShowMainMenu() {
 	clearScreen()
 	fmt.Println("=======================================")
@@ -434,6 +454,7 @@ func ShowMainMenu() {
 	fmt.Println("=======================================")
 }
 
+// PrintPasswordList prints a formatted table of password entries.
 func PrintPasswordList(passwords []Password) {
 	fmt.Println("=== Password list ===")
 	fmt.Println("Name          Category       Created           Last Modified")
@@ -444,6 +465,7 @@ func PrintPasswordList(passwords []Password) {
 
 }
 
+// ShowPasswordDetails prints the full details of a single password entry.
 func ShowPasswordDetails(password Password) {
 	fmt.Println("=== Password details ===")
 	fmt.Printf("Service: %s\n", password.Name)
@@ -453,6 +475,7 @@ func ShowPasswordDetails(password Password) {
 	fmt.Printf("Last Modified: %s\n", password.LastModified.Format("2006-01-02 15:04:05"))
 }
 
+// HandlePasswordGeneration runs the interactive password generation flow.
 func HandlePasswordGeneration(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Password Generation ===")
@@ -479,6 +502,7 @@ func HandlePasswordGeneration(pm *PasswordManager) error {
 	return nil
 }
 
+// HandlePasswordAdd runs the interactive flow for adding a new password.
 func HandlePasswordAdd(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Add New Password ===")
@@ -517,6 +541,7 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 	return nil
 }
 
+// HandlePasswordSearch runs the interactive flow for searching a password by service name.
 func HandlePasswordSearch(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Search Password ===")
@@ -535,6 +560,7 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 	return nil
 }
 
+// HandlePasswordList runs the interactive flow for listing all stored passwords.
 func HandlePasswordList(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== List All Passwords ===")
@@ -548,6 +574,7 @@ func HandlePasswordList(pm *PasswordManager) error {
 	return nil
 }
 
+// HandlePasswordUpdate runs the interactive flow for updating an existing password.
 func HandlePasswordUpdate(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Update Password ===")
@@ -571,6 +598,7 @@ func HandlePasswordUpdate(pm *PasswordManager) error {
 	return nil
 }
 
+// HandleExitAndSave encrypts the vault to disk and exits the application.
 func HandleExitAndSave(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Saving and Exiting ===")
@@ -584,6 +612,7 @@ func HandleExitAndSave(pm *PasswordManager) error {
 	return nil
 }
 
+// HandleDeletePassword runs the interactive flow for deleting a password.
 func HandleDeletePassword(pm *PasswordManager) error {
 	clearScreen()
 	name := ReadUserInput("Enter service name to delete: ")
@@ -597,6 +626,7 @@ func HandleDeletePassword(pm *PasswordManager) error {
 	return nil
 }
 
+// HandleListCategories runs the interactive flow for listing all categories.
 func HandleListCategories(pm *PasswordManager) error {
 	clearScreen()
 	categories := pm.ListCategories()
@@ -608,6 +638,7 @@ func HandleListCategories(pm *PasswordManager) error {
 	return nil
 }
 
+// HandleShowPasswordStatistics runs the interactive flow for displaying password statistics.
 func HandleShowPasswordStatistics(pm *PasswordManager) error {
 	clearScreen()
 	stats := pm.GetPasswordStats()
@@ -631,6 +662,7 @@ func HandleShowPasswordStatistics(pm *PasswordManager) error {
 	return nil
 }
 
+// HandleShowDuplicates runs the interactive flow for finding duplicate passwords.
 func HandleShowDuplicates(pm *PasswordManager) error {
 	clearScreen()
 	duplicates := pm.FindDuplicatePasswords()
