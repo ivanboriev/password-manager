@@ -590,8 +590,12 @@ func main() {
 
 	err = pm.LoadFromFile()
 	if err != nil {
-		fmt.Printf("Error loading data: %v\n", err)
-		os.Exit(1)
+		if os.IsNotExist(err) {
+			showInfo("No existing password data found. Starting fresh.")
+		} else {
+			fmt.Printf("Error loading password data: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	showSuccess("Password manager initialized successfully!")
