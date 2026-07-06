@@ -571,24 +571,115 @@ func HandleExitAndSave(pm *PasswordManager) error {
 }
 
 func main() {
-
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run main.go <master_password>")
-		os.Exit(1)
-	}
+	showInfo("Welcome to the Password Manager!")
+	showInfo("=== Password Manager Initialization ===")
 
 	pm := NewPasswordManager("passwords.dat")
 
-	err := pm.SetMasterPassword(os.Args[1])
+	password, err := readPassword()
+	if err != nil {
+		fmt.Printf("Error reading password: %v\n", err)
+		os.Exit(1)
+	}
 
+	err = pm.SetMasterPassword(password)
 	if err != nil {
 		fmt.Printf("Error setting master password: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Initialized: %t\n", pm.isInitialized)
-	fmt.Printf("File path: %s\n", pm.filePath)
-	fmt.Printf("Passwords count: %d\n", len(pm.passwords))
-	fmt.Printf("Categories: %v\n", pm.ListCategories())
-	fmt.Printf("Password stats: %v\n", pm.GetPasswordStats())
+	err = pm.LoadFromFile()
+	if err != nil {
+		fmt.Printf("Error loading data: %v\n", err)
+		os.Exit(1)
+	}
+
+	showSuccess("Password manager initialized successfully!")
+
+	waitForEnter()
+
+	for {
+		ShowMainMenu()
+
+		key := ReadUserInput("Select an option: ")
+
+		switch key {
+		case "1":
+			HandlePasswordGeneration(pm)
+		case "2":
+			HandlePasswordAdd(pm)
+		case "3":
+			HandlePasswordSearch(pm)
+		case "4":
+			clearScreen()
+			passwords := pm.ListPasswords()
+			PrintPasswordList(passwords)
+			waitForEnter()
+		case "5":
+			HandlePasswordUpdate(pm)
+		case "6":
+			clearScreen()
+			name := ReadUserInput("Enter service name to delete: ")
+			err := pm.DeletePassword(name)
+			if err != nil {
+				showError("failed to delete password: " + err.Error())
+				waitForEnter()
+				continue
+			}
+			showSuccess("Password deleted successfully!")
+			waitForEnter()
+		case "7":
+			clearScreen()
+			categories := pm.ListCategories()
+			fmt.Println("=== Categories ===")
+			for _, cat := range categories {
+				fmt.Println(cat)
+			}
+			waitForEnter()
+		case "8":
+			clearScreen()
+			stats := pm.GetPasswordStats()
+			fmt.Println("=== Password Statistics ===")
+			fmt.Printf("Total passwords: %d\n", stats["total"])
+			fmt.Println("Passwords by category:")
+			for cat, count := range stats["categories"].(map[string]int) {
+				fmt.Printf("  %s: %d\n", cat, count)
+			}
+			if stats["oldest"] != nil {
+				fmt.Printf("Oldest password created at: %s\n", stats["oldest"].(time.Time).Format("2006-01-02 15:04:05"))
+			} else {
+				fmt.Println("No passwords available.")
+			}
+			if stats["newest"] != nil {
+				fmt.Printf("Newest password created at: %s\n", stats["newest"].(time.Time).Format("2006-01-02 15:04:05"))
+			} else {
+				fmt.Println("No passwords available.")
+			}
+			waitForEnter()
+		case "9":
+			clearScreen()
+			duplicates := pm.FindDuplicatePasswords()
+			if len(duplicates) == 0 {
+				showInfo("No duplicate passwords found.")
+			} else {
+				fmt.Println("=== Duplicate Passwords ===")
+				for value, names := range duplicates {
+					fmt.Printf("Password: %s\n", value)
+					fmt.Printf("Used by services: %s\n", strings.Join(names, ", "))
+					fmt.Println("---------------------------")
+				}
+			}
+			waitForEnter()
+		case "0":
+			err := HandleExitAndSave(pm)
+			if err != nil {
+				showError("failed to save data: " + err.Error())
+				os.Exit(1)
+			}
+			return
+		default:
+			showError("invalid option selected")
+			waitForEnter()
+		}
+	}
 }
