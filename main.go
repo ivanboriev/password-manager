@@ -459,16 +459,19 @@ func HandlePasswordGeneration(pm *PasswordManager) error {
 	var length int
 	_, err := fmt.Sscanf(lengthInput, "%d", &length)
 	if err != nil || length < 8 {
-		return fmt.Errorf("invalid length input")
+		showError("invalid length input")
+		return err
 	}
 
 	password, err := pm.GeneratePassword(length)
 	if err != nil {
+		showError("Generation failed: " + err.Error())
 		return err
 	}
 
 	showSuccess("Password generated successfully!")
 	fmt.Printf("Generated password: %s\n", password)
+	waitForEnter()
 
 	return nil
 }
@@ -477,23 +480,34 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 	clearScreen()
 	fmt.Println("=== Add New Password ===")
 	name := ReadUserInput("Enter service name: ")
-	value, err := readPassword()
-	if err != nil {
-		return fmt.Errorf("failed to read password: %v", err)
-	}
 	category := ReadUserInput("Enter category: ")
 
-	err = pm.CheckPasswordStrength(value)
-	if err != nil {
-		return fmt.Errorf("password strength check failed: %v", err)
+	value := ReadUserInput("Enter password (or press Enter to generate):")
+	if len(value) == 0 {
+		password, err := pm.GeneratePassword(8)
+		if err != nil {
+			showError("failed to generate password: " + err.Error())
+			return err
+		}
+
+		value = password
+		showInfo("Generated password: " + value)
+	} else {
+		err := pm.CheckPasswordStrength(value)
+		if err != nil {
+			showError("failed to check password strength: " + err.Error())
+			return err
+		}
 	}
 
-	err = pm.SavePassword(name, value, category)
+	err := pm.SavePassword(name, value, category)
 	if err != nil {
-		return fmt.Errorf("failed to save password: %v", err)
+		showError("failed to save password: " + err.Error())
+		return err
 	}
 
 	showSuccess("Password added successfully!")
+	waitForEnter()
 	return nil
 }
 
@@ -504,9 +518,11 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 
 	password, err := pm.GetPassword(name)
 	if err != nil {
+		showError(fmt.Sprintf("Password not found: %v", err))
 		return fmt.Errorf("failed to search password: %v", err)
 	}
 	ShowPasswordDetails(password)
+	waitForEnter()
 	return nil
 }
 
@@ -516,15 +532,18 @@ func HandlePasswordUpdate(pm *PasswordManager) error {
 	name := ReadUserInput("Enter service name to update: ")
 	newPassword, err := readPassword()
 	if err != nil {
-		return fmt.Errorf("failed to read new password: %v", err)
+		showError("failed to read new password: " + err.Error())
+		return err
 	}
 
 	err = pm.UpdatePassword(name, newPassword)
 	if err != nil {
-		return fmt.Errorf("failed to update password: %v", err)
+		showError("failed to update password: " + err.Error())
+		return err
 	}
 
 	showSuccess("Password updated successfully!")
+	waitForEnter()
 	return nil
 }
 
