@@ -447,6 +447,7 @@ func ShowPasswordDetails(password Password) {
 	fmt.Println("=== Password details ===")
 	fmt.Printf("Service: %s\n", password.Name)
 	fmt.Printf("Category: %s\n", password.Category)
+	fmt.Printf("Password: %s\n", password.Value)
 	fmt.Printf("Created: %s\n", password.CreatedAt.Format("2006-01-02 15:04:05"))
 	fmt.Printf("Last Modified: %s\n", password.LastModified.Format("2006-01-02 15:04:05"))
 }
