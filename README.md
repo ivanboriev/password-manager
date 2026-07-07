@@ -34,20 +34,21 @@
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/iboriev/password-manager.git
+git clone https://github.com/ivanboriev/password-manager.git
 cd password-manager
 
 # Сборка
-go build -o pm .
+go build -o ./build/pm ./cmd/pm
 
 # Запуск
-./pm
+./build/pm
 ```
 
-Или запуск без сборки:
+Или через Make:
 
 ```bash
-go run main.go
+make build   # сборка
+make run     # сборка + запуск
 ```
 
 ---
@@ -84,35 +85,56 @@ package main
 import (
 	"fmt"
 	"log"
-	"password-manager"
+
+	"github.com/ivanboriev/password-manager/passwordmanager"
+	"github.com/ivanboriev/password-manager/vault"
 )
 
 func main() {
-	pm := NewPasswordManager("passwords.dat")
+	// Генерация криптостойкого пароля
+	pwd, err := passwordmanager.GeneratePassword(16)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Generated:", pwd)
 
-	// Установка мастер-пароля (минимум 8 символов)
-	if err := pm.SetMasterPassword("my-secure-master-key"); err != nil {
+	// Проверка сложности пароля
+	if err := passwordmanager.CheckPasswordStrength(pwd); err != nil {
 		log.Fatal(err)
 	}
 
-	// Генерация пароля
-	pwd, _ := pm.GeneratePassword(16)
-	fmt.Println("Generated:", pwd)
+	// Создание и инициализация хранилища
+	v := vault.New("passwords.dat")
+	if err := v.SetMasterKey("my-secure-master-key"); err != nil {
+		log.Fatal(err)
+	}
 
-	// Добавление пароля
-	pm.SavePassword("github", pwd, "dev")
+	// Сохранение пароля
+	if err := v.Save("github", pwd, "dev"); err != nil {
+		log.Fatal(err)
+	}
+
+	// Загрузка существующего vault из файла
+	if err := v.LoadFromFile(); err != nil {
+		log.Printf("No existing vault, starting fresh: %v", err)
+	}
 
 	// Получение пароля
-	entry, _ := pm.GetPassword("github")
+	entry, err := v.Get("github")
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("Service: %s, Password: %s\n", entry.Name, entry.Value)
 
 	// Список всех паролей
-	for _, p := range pm.ListPasswords() {
+	for _, p := range v.List() {
 		fmt.Println(p.Name, p.Category)
 	}
 
-	// Сохранение в зашифрованный файл
-	pm.SaveToFile()
+	// Сохранение в зашифрованный файл (AES-256-GCM)
+	if err := v.SaveToFile(); err != nil {
+		log.Fatal(err)
+	}
 }
 ```
 
@@ -122,16 +144,24 @@ func main() {
 
 ```
 password-manager/
-├── art/
-│   └── pm.png               # Скриншот интерфейса
-├── .gitignore                # Игнорирование passwords.dat
-├── go.mod                    # Go-модуль (go 1.26)
-├── go.sum                    # Контрольные суммы зависимостей
-├── main.go                   # Исходный код (719 строк)
-└── README.md                 # Документация
+├── art/                      # Скриншот интерфейса
+│   └── pm.png
+├── cmd/
+│   └── pm/
+│       └── main.go           # Точка входа CLI
+├── passwordmanager/          # Публичный библиотечный пакет
+│   ├── password.go           #   Password, NewPassword
+│   ├── generate.go           #   GeneratePassword
+│   └── validate.go           #   CheckPasswordStrength
+├── vault/                    # Пакет шифрованного хранилища
+│   └── vault.go              #   Vault (CRUD, AES-256-GCM, save/load)
+├── cli/                      # Пакет терминального интерфейса
+│   └── cli.go                #   Меню, хендлеры, главный цикл
+├── .gitignore
+├── go.mod / go.sum
+├── Makefile
+└── README.md
 ```
-
-Весь код находится в одном файле `main.go`.
 
 ---
 
@@ -142,7 +172,7 @@ password-manager/
 - [ ] Импорт/экспорт паролей (CSV, JSON)
 - [ ] Графический интерфейс (TUI или веб-версия)
 - [ ] Двухфакторная аутентификация для доступа к vault
-- [ ] Модульная архитектура (разделение на пакеты)
+- [x] Модульная архитектура (разделение на пакеты)
 - [ ] Юнит-тесты
 - [ ] CI/CD (GitHub Actions)
 

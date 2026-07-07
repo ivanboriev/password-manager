@@ -1,4 +1,4 @@
-module password-manager
+module github.com/ivanboriev/password-manager
 
 go 1.26.2
 
